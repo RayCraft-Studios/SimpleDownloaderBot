@@ -20,7 +20,7 @@ namespace SimpleDownloaderBot
             var channel = context.Channel;
             var videoId = VideoId.Parse(videoUrl);
             var video = await youtube.Videos.GetAsync(videoId);
-            //await channel.SendMessageAsync($"Downloading {video.Title}!");
+            await channel.SendMessageAsync($"Downloading {video.Title}!");
             Console.WriteLine($"Downloading {video.Title}...");
 
             string tempPath = Path.GetTempPath();
