@@ -17,8 +17,10 @@ namespace SimpleDownloaderBot
         private YoutubeClient youtube = new YoutubeClient();
         public async Task DownloadAndPostVideoAsync(string videoUrl, string format, SocketCommandContext context)
         {
+            var channel = context.Channel;
             var videoId = VideoId.Parse(videoUrl);
             var video = await youtube.Videos.GetAsync(videoId);
+            //await channel.SendMessageAsync($"Downloading {video.Title}!");
             Console.WriteLine($"Downloading {video.Title}...");
 
             string tempPath = Path.GetTempPath();
@@ -26,7 +28,6 @@ namespace SimpleDownloaderBot
             try
             {
                 var streamManifest = await youtube.Videos.Streams.GetManifestAsync(videoId);
-                var streamInfo = streamManifest.GetMuxedStreams().GetWithHighestVideoQuality();
 
                 var videoStreamInfo = streamManifest.GetVideoOnlyStreams().GetWithHighestVideoQuality();
                 var audioStreamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
@@ -37,7 +38,6 @@ namespace SimpleDownloaderBot
                 await youtube.Videos.Streams.DownloadAsync(videoStreamInfo, videoFilePath);
                 await youtube.Videos.Streams.DownloadAsync(audioStreamInfo, audioFilePath);
 
-                var channel = context.Channel;
                 await channel.SendFileAsync(audioFilePath, $"Here is the audio from {video.Title}!");
 
                 if (File.Exists(audioFilePath)) File.Delete(audioFilePath);

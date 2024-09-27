@@ -16,7 +16,7 @@ namespace SimpleDownloaderBot
         [Command("download")]
         public async Task InitReposAsync(string youtubeUrl)
         {
-            await ReplyAsync("Start downloading from {youtubeUrl}...");
+            await ReplyAsync($"Start downloading from {youtubeUrl}...");
 
             try
             {
