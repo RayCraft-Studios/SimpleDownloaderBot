@@ -17,33 +17,13 @@ namespace SimpleDownloaderBot.Controller
         [Command("download")]
         public async Task downloadVideoAsync(string youtubeUrl)
         {
-            await ReplyAsync($"Start downloading...");
-
-            try
-            {
-                await downloadService.DownloadVideoAsMusic(youtubeUrl, Context);
-                await ReplyAsync("Download completed and file sent.");
-            }
-            catch (Exception ex)
-            {
-                await ReplyAsync($"An error occurred: {ex.Message}");
-            }
+            downloadService.DownloadVideoAsMusic(youtubeUrl, Context);
         }
 
         [Command("download_playlist")]
         public async Task downloadPlaylistAsync(string playlistUrl)
         {
-            await ReplyAsync($"Start downloading whole Playlist...");
-
-            try
-            {
-                await downloadService.DownloadPlaylistAsMusic(playlistUrl, Context);
-                await ReplyAsync("Download completed!");
-            }
-            catch (Exception ex)
-            {
-                await ReplyAsync($"An error occurred: {ex.Message}");
-            }
+            downloadService.DownloadPlaylistAsMusic(playlistUrl, Context);
         }
 
     }

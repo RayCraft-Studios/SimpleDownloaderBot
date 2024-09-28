@@ -25,39 +25,47 @@ namespace SimpleDownloaderBot.Services
         public async Task DownloadVideoAsMusic(string videoUrl, SocketCommandContext context)
         {
             var channel = context.Channel;
-            var videoId = VideoId.Parse(videoUrl);
-            var video = await youtube.Videos.GetAsync(videoId);
-
-            string validName = CheckValidName(video.Title);
-            await channel.SendMessageAsync($"Downloading {validName}...");
-            Console.WriteLine($"Downloading {validName}...");
-
-            if (video.Duration <= TimeSpan.FromMinutes(minutesMax))
+            try
             {
-                try
+
+                var videoId = VideoId.Parse(videoUrl);
+                var video = await youtube.Videos.GetAsync(videoId);
+
+                string validName = CheckValidName(video.Title);
+                await channel.SendMessageAsync($"Start downloading {validName}...");
+                Console.WriteLine($"Downloading {validName}...");
+
+                if (video.Duration <= TimeSpan.FromMinutes(minutesMax))
                 {
-                    var videoFilePath = Path.Combine(tempPath, $"{validName}.mp4");
-                    var audioFilePath = Path.Combine(tempPath, $"{validName}.mp3");
-
-                    await downloadVideo(video, videoFilePath, audioFilePath);
-
-                    if (File.Exists(audioFilePath)) 
+                    try
                     {
-                        await channel.SendFileAsync(audioFilePath);
-                        File.Delete(audioFilePath);
+                        var videoFilePath = Path.Combine(tempPath, $"{validName}.mp4");
+                        var audioFilePath = Path.Combine(tempPath, $"{validName}.mp3");
+
+                        await downloadVideo(video, videoFilePath, audioFilePath);
+
+                        if (File.Exists(audioFilePath))
+                        {
+                            await channel.SendFileAsync(audioFilePath);
+                            File.Delete(audioFilePath);
+                        }
+
+                        if (File.Exists(videoFilePath)) File.Delete(videoFilePath);
                     }
-                    
-                    if (File.Exists(videoFilePath)) File.Delete(videoFilePath);
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Download error: {ex.Message}");
+                        throw;
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    Console.WriteLine($"Download error: {ex.Message}");
-                    throw;
+                    await channel.SendMessageAsync($"{video.Title} is to long: Downloads cannot have more than {minutesMax} minutes. This data has a length of {video.Duration}");
                 }
             }
-            else
+            catch (Exception ex)
             {
-                await channel.SendMessageAsync($"{video.Title} is to long: Downloads cannot have more than {minutesMax} minutes. This data has a length of {video.Duration}");
+                await channel.SendMessageAsync($"An error occurred: {ex.Message}");
             }
         }
 
@@ -66,45 +74,53 @@ namespace SimpleDownloaderBot.Services
          */
         public async Task DownloadPlaylistAsMusic(string playlistUrl, SocketCommandContext context)
         {
-            var playlistId = PlaylistId.Parse(playlistUrl);
-            var playlist = await youtube.Playlists.GetAsync(playlistId);
-
             var channel = context.Channel;
-            await channel.SendMessageAsync($"Playlist title: {playlist.Title}. Start Downloading...");
-            Console.WriteLine($"Playlist title: {playlist.Title}");
-
-            var videos = await youtube.Playlists.GetVideosAsync(playlistId);
-            var videoList = videos.ToList();
-
-            for (int i = 0; i < videoList.Count; i += batchSize)
+            try
             {
-                var currentBatch = videoList.Skip(i).Take(batchSize).ToList();
-                var downloadTasks = currentBatch.Select(async video =>
+                var playlistId = PlaylistId.Parse(playlistUrl);
+                var playlist = await youtube.Playlists.GetAsync(playlistId);
+
+                await channel.SendMessageAsync($"Playlist title: {playlist.Title}. Start Downloading...");
+                Console.WriteLine($"Playlist title: {playlist.Title}");
+
+                var videos = await youtube.Playlists.GetVideosAsync(playlistId);
+                var videoList = videos.ToList();
+
+                for (int i = 0; i < videoList.Count; i += batchSize)
                 {
-                    try
+                    var currentBatch = videoList.Skip(i).Take(batchSize).ToList();
+                    var downloadTasks = currentBatch.Select(async video =>
                     {
-                        var videoId = VideoId.Parse(video.Url);
-                        var ytvideo = await youtube.Videos.GetAsync(videoId);
+                        try
+                        {
+                            var videoId = VideoId.Parse(video.Url);
+                            var ytvideo = await youtube.Videos.GetAsync(videoId);
 
-                        string validName = CheckValidName(ytvideo.Title);
+                            string validName = CheckValidName(ytvideo.Title);
 
-                        var videoFilePath = Path.Combine(tempPath, $"{validName}.mp4");
-                        var audioFilePath = Path.Combine(tempPath, $"{validName}.mp3");
+                            var videoFilePath = Path.Combine(tempPath, $"{validName}.mp4");
+                            var audioFilePath = Path.Combine(tempPath, $"{validName}.mp3");
 
-                        await downloadVideo(ytvideo, videoFilePath, audioFilePath);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("Error: " + ex);
-                        await channel.SendMessageAsync($"An error occurred when downloading {video.Title} ERROR: {ex.Message}");
-                    }
-                });
+                            await downloadVideo(ytvideo, videoFilePath, audioFilePath);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Error: " + ex);
+                            await channel.SendMessageAsync($"An error occurred when downloading {video.Title} ERROR: {ex.Message}");
+                        }
+                    });
 
-                await Task.WhenAll(downloadTasks);
-                await channel.SendMessageAsync($"Batch {i / batchSize + 1} completed.");
-                await Task.Delay(TimeSpan.FromSeconds(3));
+                    await Task.WhenAll(downloadTasks);
+                    await channel.SendMessageAsync($"Batch {i / batchSize + 1} completed.");
+                    await Task.Delay(TimeSpan.FromSeconds(3));
+                }
+                await channel.SendMessageAsync("All videos have been processed.");
             }
-            await channel.SendMessageAsync("All videos have been processed.");
+            catch (Exception ex)
+            {
+                await channel.SendMessageAsync($"An error occurred: {ex.Message}");
+            }
+            
         }
 
         /**
