@@ -21,7 +21,7 @@ namespace SimpleDownloaderBot.Controller
 
             try
             {
-                await downloadService.DownloadAndPostVideoAsync(youtubeUrl, "mp3", Context);
+                await downloadService.DownloadVideoAsMusic(youtubeUrl, Context);
                 await ReplyAsync("Download completed and file sent.");
             }
             catch (Exception ex)
@@ -37,7 +37,7 @@ namespace SimpleDownloaderBot.Controller
 
             try
             {
-                await downloadService.DownloadAndPostPlayListAsync(playlistUrl, "mp3", Context);
+                await downloadService.DownloadPlaylistAsMusic(playlistUrl, Context);
                 await ReplyAsync("Download completed!");
             }
             catch (Exception ex)

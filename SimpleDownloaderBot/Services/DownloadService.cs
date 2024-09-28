@@ -13,6 +13,7 @@ namespace SimpleDownloaderBot.Services
         private YoutubeClient youtube = new YoutubeClient();
         private int minutesMax = 10;
         private const int batchSize = 10;
+        private string tempPath = Path.GetTempPath();
 
         /**
          * Methode that use the Youtube-Explode Libary to download the specific
@@ -21,7 +22,7 @@ namespace SimpleDownloaderBot.Services
          * videoUrl = url from the video you want to download
          * context = the SocketCommandContext you want to send the responce
          */
-        public async Task DownloadAndPostVideoAsync(string videoUrl, string format, SocketCommandContext context)
+        public async Task DownloadVideoAsMusic(string videoUrl, SocketCommandContext context)
         {
             var channel = context.Channel;
             var videoId = VideoId.Parse(videoUrl);
@@ -35,7 +36,18 @@ namespace SimpleDownloaderBot.Services
             {
                 try
                 {
-                    await downloadVideo(video, format);
+                    var videoFilePath = Path.Combine(tempPath, $"{validName}.mp4");
+                    var audioFilePath = Path.Combine(tempPath, $"{validName}.mp3");
+
+                    await downloadVideo(video, videoFilePath, audioFilePath);
+
+                    if (File.Exists(audioFilePath)) 
+                    {
+                        await channel.SendFileAsync(audioFilePath);
+                        File.Delete(audioFilePath);
+                    }
+                    
+                    if (File.Exists(videoFilePath)) File.Delete(videoFilePath);
                 }
                 catch (Exception ex)
                 {
@@ -52,7 +64,7 @@ namespace SimpleDownloaderBot.Services
         /**
          * Method to download the whole public playlist
          */
-        public async Task DownloadAndPostPlayListAsync(string playlistUrl, string format, SocketCommandContext context)
+        public async Task DownloadPlaylistAsMusic(string playlistUrl, SocketCommandContext context)
         {
             var playlistId = PlaylistId.Parse(playlistUrl);
             var playlist = await youtube.Playlists.GetAsync(playlistId);
@@ -73,7 +85,13 @@ namespace SimpleDownloaderBot.Services
                     {
                         var videoId = VideoId.Parse(video.Url);
                         var ytvideo = await youtube.Videos.GetAsync(videoId);
-                        await downloadVideo(ytvideo, format);
+
+                        string validName = CheckValidName(ytvideo.Title);
+
+                        var videoFilePath = Path.Combine(tempPath, $"{validName}.mp4");
+                        var audioFilePath = Path.Combine(tempPath, $"{validName}.mp3");
+
+                        await downloadVideo(ytvideo, videoFilePath, audioFilePath);
                     }
                     catch (Exception ex)
                     {
@@ -92,11 +110,8 @@ namespace SimpleDownloaderBot.Services
         /**
          * Method to download the specific video
          */
-        private async Task downloadVideo(Video video, string format)
+        private async Task downloadVideo(Video video, string videoFilePath, string audioFilePath)
         {
-            string validName = CheckValidName(video.Title);
-            string tempPath = Path.GetTempPath();
-
             if (video.Duration <= TimeSpan.FromMinutes(minutesMax))
             {
                 try
@@ -105,15 +120,9 @@ namespace SimpleDownloaderBot.Services
                     var videoStreamInfo = streamManifest.GetVideoOnlyStreams().GetWithHighestVideoQuality();
                     var audioStreamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
 
-                    var videoFilePath = Path.Combine(tempPath, $"{validName}.mp4");
-                    var audioFilePath = Path.Combine(tempPath, $"{validName}.mp3");
-
                     await youtube.Videos.Streams.DownloadAsync(videoStreamInfo, videoFilePath);
                     await youtube.Videos.Streams.DownloadAsync(audioStreamInfo, audioFilePath);
 
-
-                    if (File.Exists(audioFilePath)) File.Delete(audioFilePath);
-                    if (File.Exists(videoFilePath)) File.Delete(videoFilePath);
                     Console.WriteLine("Done!");
                 }
                 catch (Exception ex)
@@ -131,7 +140,8 @@ namespace SimpleDownloaderBot.Services
         private string CheckValidName(string videoName)
         {
             char[] invalidChars = Path.GetInvalidFileNameChars();
-            for (int i = 0; i < invalidChars.Length; i++) {
+            for (int i = 0; i < invalidChars.Length; i++)
+            {
                 videoName = videoName.Replace(invalidChars[i], ' ');
             }
             return videoName;
