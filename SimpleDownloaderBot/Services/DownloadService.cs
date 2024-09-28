@@ -25,34 +25,43 @@ namespace SimpleDownloaderBot.Services
             var videoId = VideoId.Parse(videoUrl);
             var video = await youtube.Videos.GetAsync(videoId);
 
+            int minutesMax = 10;
+
             string validName = CheckValidName(video.Title);
             await channel.SendMessageAsync($"Downloading {validName}...");
             Console.WriteLine($"Downloading {validName}...");
 
             string tempPath = Path.GetTempPath();
 
-            try
+            if (video.Duration <= TimeSpan.FromMinutes(minutesMax))
             {
-                var streamManifest = await youtube.Videos.Streams.GetManifestAsync(videoId);
-                var videoStreamInfo = streamManifest.GetVideoOnlyStreams().GetWithHighestVideoQuality();
-                var audioStreamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
+                try
+                {
+                    var streamManifest = await youtube.Videos.Streams.GetManifestAsync(videoId);
+                    var videoStreamInfo = streamManifest.GetVideoOnlyStreams().GetWithHighestVideoQuality();
+                    var audioStreamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
 
-                var videoFilePath = Path.Combine(tempPath, $"{validName}.mp4");
-                var audioFilePath = Path.Combine(tempPath, $"{validName}.mp3");
+                    var videoFilePath = Path.Combine(tempPath, $"{validName}.mp4");
+                    var audioFilePath = Path.Combine(tempPath, $"{validName}.mp3");
 
-                await youtube.Videos.Streams.DownloadAsync(videoStreamInfo, videoFilePath);
-                await youtube.Videos.Streams.DownloadAsync(audioStreamInfo, audioFilePath);
+                    await youtube.Videos.Streams.DownloadAsync(videoStreamInfo, videoFilePath);
+                    await youtube.Videos.Streams.DownloadAsync(audioStreamInfo, audioFilePath);
 
-                await channel.SendFileAsync(audioFilePath, $"Here is the audio from {video.Title}!");
+                    await channel.SendFileAsync(audioFilePath, $"Here is the audio from {video.Title}!");
 
-                if (File.Exists(audioFilePath)) File.Delete(audioFilePath);
-                if (File.Exists(videoFilePath)) File.Delete(videoFilePath);
-                Console.WriteLine("Done!");
+                    if (File.Exists(audioFilePath)) File.Delete(audioFilePath);
+                    if (File.Exists(videoFilePath)) File.Delete(videoFilePath);
+                    Console.WriteLine("Done!");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Download error: {ex.Message}");
+                    throw;
+                }
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine($"Download error: {ex.Message}");
-                throw;
+                await channel.SendMessageAsync($"{video.Title} is to long: Downloads cannot have more than {minutesMax} minutes. This data has a length of {video.Duration}");
             }
         }
 
@@ -74,7 +83,7 @@ namespace SimpleDownloaderBot.Services
             {
                 try
                 {
-                    await DownloadAndPostVideoAsync(video.Url, format, context);
+                    DownloadAndPostVideoAsync(video.Url, format, context);
                 }
                 catch( Exception ex )
                 {
