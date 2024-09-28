@@ -4,10 +4,6 @@ using YoutubeExplode.Videos.Streams;
 using YoutubeExplode.Common;
 using YoutubeExplode.Playlists;
 using YoutubeExplode.Videos;
-using NAudio.Wave;
-using NAudio.Lame;
-using System;
-using Discord;
 using Discord.Commands;
 
 namespace SimpleDownloaderBot.Services
@@ -28,8 +24,10 @@ namespace SimpleDownloaderBot.Services
             var channel = context.Channel;
             var videoId = VideoId.Parse(videoUrl);
             var video = await youtube.Videos.GetAsync(videoId);
-            await channel.SendMessageAsync($"Downloading {video.Title}!");
-            Console.WriteLine($"Downloading {video.Title}...");
+
+            string validName = CheckValidName(video.Title);
+            await channel.SendMessageAsync($"Downloading {validName}...");
+            Console.WriteLine($"Downloading {validName}...");
 
             string tempPath = Path.GetTempPath();
 
@@ -39,8 +37,7 @@ namespace SimpleDownloaderBot.Services
                 var videoStreamInfo = streamManifest.GetVideoOnlyStreams().GetWithHighestVideoQuality();
                 var audioStreamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
 
-                string validName = CheckValidName(video.Title);
-                var videoFilePath = Path.Combine(tempPath, $"{validName}_video.mp4");
+                var videoFilePath = Path.Combine(tempPath, $"{validName}.mp4");
                 var audioFilePath = Path.Combine(tempPath, $"{validName}.mp3");
 
                 await youtube.Videos.Streams.DownloadAsync(videoStreamInfo, videoFilePath);
@@ -50,15 +47,19 @@ namespace SimpleDownloaderBot.Services
 
                 if (File.Exists(audioFilePath)) File.Delete(audioFilePath);
                 if (File.Exists(videoFilePath)) File.Delete(videoFilePath);
-                Console.WriteLine("Download und Post abgeschlossen, temporäre Dateien gelöscht.");
+                Console.WriteLine("Done!");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Fehler beim Download: {ex.Message}");
+                Console.WriteLine($"Download error: {ex.Message}");
                 throw;
             }
         }
 
+        /**
+         * Method to remove invalid char out
+         * of the string 
+         */
         private string CheckValidName(string videoName)
         {
             char[] invalidChars = Path.GetInvalidFileNameChars();

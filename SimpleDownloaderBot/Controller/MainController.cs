@@ -19,13 +19,20 @@ namespace SimpleDownloaderBot.Controller
             var embed = new EmbedBuilder()
                 .WithTitle("Command Overview")
                 .WithColor(Color.Blue)
-                .WithDescription("Hier ist eine Liste aller verfügbaren Befehle:")
+                .WithDescription("List of all Commands:")
                 .AddField("!help", "Shows all exiting Commands")
+                .AddField("!hello", "Nice greeding for nice people")
                 .AddField("!download [Youtube URL]", "Downloads the specific Video and send it the channel as mp3")
                 .WithFooter(footer => footer.Text = "SimpleDownloaderBot | ©RayCraft Studios 2024")
                 .WithCurrentTimestamp();
 
             await ReplyAsync(embed: embed.Build());
+        }
+
+        [Command("hello")]
+        public async Task greedings()
+        {
+            await ReplyAsync($"Howdy {Context.User}!");
         }
     }
 }
