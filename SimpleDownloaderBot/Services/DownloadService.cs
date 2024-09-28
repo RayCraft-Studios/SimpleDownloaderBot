@@ -15,6 +15,14 @@ namespace SimpleDownloaderBot.Services
     internal class DownloadService
     {
         private YoutubeClient youtube = new YoutubeClient();
+
+        /**
+         * Methode that use the Youtube-Explode Libary to download the specific
+         * Video through the specific link
+         * 
+         * videoUrl = url from the video you want to download
+         * context = the SocketCommandContext you want to send the responce
+         */ 
         public async Task DownloadAndPostVideoAsync(string videoUrl, string format, SocketCommandContext context)
         {
             var channel = context.Channel;
@@ -28,7 +36,6 @@ namespace SimpleDownloaderBot.Services
             try
             {
                 var streamManifest = await youtube.Videos.Streams.GetManifestAsync(videoId);
-
                 var videoStreamInfo = streamManifest.GetVideoOnlyStreams().GetWithHighestVideoQuality();
                 var audioStreamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
 

@@ -18,14 +18,13 @@ namespace SimpleDownloaderBot.Controller
         {
             var embed = new EmbedBuilder()
                 .WithTitle("Command Overview")
-                .WithColor(Color.Blue) // Setzt eine schöne blaue Farbe für das Embed
+                .WithColor(Color.Blue)
                 .WithDescription("Hier ist eine Liste aller verfügbaren Befehle:")
                 .AddField("!help", "Shows all exiting Commands")
                 .AddField("!download [Youtube URL]", "Downloads the specific Video and send it the channel as mp3")
                 .WithFooter(footer => footer.Text = "SimpleDownloaderBot | ©RayCraft Studios 2024")
                 .WithCurrentTimestamp();
 
-            // Sende die Nachricht im aktuellen Channel
             await ReplyAsync(embed: embed.Build());
         }
     }

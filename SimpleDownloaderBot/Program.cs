@@ -11,16 +11,23 @@ class Program
 {
     static Config config;
 
+    /**
+     * Entry point
+     * 
+     * Checks token 
+     * Init and start bot
+     */ 
     static async Task Main(string[] args)
     {
-        // Deine bisherigen Initialisierungen
         InitAPIKeys();
 
-        // Starte den Discord-Bot
         var discordBot = new DiscordBot(config.discordBotToken);
         await discordBot.StartAsync();
     }
 
+    /**
+     * Method to check if the tokens in config.json are empty
+     */
     static void InitAPIKeys()
     {
         bool isValid = true;

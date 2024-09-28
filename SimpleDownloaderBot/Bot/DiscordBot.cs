@@ -17,6 +17,12 @@ namespace SimpleDownloaderBot.Bot
         private readonly CommandService _commands;
         private readonly IServiceProvider _services;
         private readonly string _token;
+
+        /**
+         * Constructor for the DiscordBot
+         * token represents the DiscordBotToke from the Discord Developer Portal
+         * in case you use this Bot for your own purpose, just insert your token in config.js
+         */
         public DiscordBot(string token)
         {
             _client = new DiscordSocketClient(new DiscordSocketConfig
@@ -33,6 +39,9 @@ namespace SimpleDownloaderBot.Bot
             _client.MessageReceived += HandleCommandAsync;
         }
 
+        /**
+         * Task to start your Bot
+         */
         public async Task StartAsync()
         {
             await RegisterCommandsAsync();
@@ -41,11 +50,20 @@ namespace SimpleDownloaderBot.Bot
             await Task.Delay(-1);
         }
 
+        /**
+         * Startup Log Message 
+         */
         private Task Log(LogMessage log)
         {
             Console.WriteLine(log);
             return Task.CompletedTask;
         }
+
+        /**
+         *  Command detector
+         *  if the command is valid, the specific controller-modul 
+         *  gets executed
+         */
 
         private async Task HandleCommandAsync(SocketMessage arg)
         {
@@ -53,18 +71,6 @@ namespace SimpleDownloaderBot.Bot
                 return;
 
             var context = new SocketCommandContext(_client, message);
-
-            // Überprüfen, ob die Nachricht in einem Server-Channel oder in einer DM gesendet wurde
-            if (context.Channel is SocketGuildChannel guildChannel)
-            {
-                Console.WriteLine($"Befehl empfangen auf Server: {context.Guild.Name} in Kanal: {context.Channel.Name} und die Nachricht ist: {message.Content}");
-            }
-            else if (context.Channel is SocketDMChannel)
-            {
-                // Befehl wurde in einer privaten Nachricht (DM) gesendet
-                Console.WriteLine($"Befehl empfangen in privaten Nachrichten: {message.Content}");
-            }
-
             int argPos = 0;
             if (message.HasStringPrefix("!", ref argPos))
             {
@@ -73,6 +79,10 @@ namespace SimpleDownloaderBot.Bot
             }
         }
 
+        /**
+         * Init all command-modules and makes them accessable for the
+         * HandleCommandAsync
+         */
         private async Task RegisterCommandsAsync()
         {
             await _commands.AddModuleAsync<DownloadController>(_services);
