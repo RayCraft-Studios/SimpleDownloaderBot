@@ -57,6 +57,34 @@ namespace SimpleDownloaderBot.Services
         }
 
         /**
+         * Method to download the whole public playlist
+         */
+        public async Task DownloadAndPostPlayListAsync(string playlistUrl, string format, SocketCommandContext context)
+        {
+            var playlistId = PlaylistId.Parse(playlistUrl);
+            var playlist = await youtube.Playlists.GetAsync(playlistId);
+
+            var channel = context.Channel;
+            await channel.SendMessageAsync($"Playlist title: {playlist.Title}. Start Downloading...");
+            Console.WriteLine($"Playlist title: {playlist.Title}");
+
+            var videos = await youtube.Playlists.GetVideosAsync(playlistId);
+
+            foreach ( var video in videos )
+            {
+                try
+                {
+                    await DownloadAndPostVideoAsync(video.Url, format, context);
+                }
+                catch( Exception ex )
+                {
+                    Console.WriteLine("Error: " + ex);
+                    await channel.SendMessageAsync($"An error occured when downloading {video.Title} ERROR: {ex}");
+                }
+            }
+        }
+
+        /**
          * Method to remove invalid char out
          * of the string 
          */

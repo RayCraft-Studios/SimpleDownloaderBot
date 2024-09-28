@@ -30,6 +30,21 @@ namespace SimpleDownloaderBot.Controller
             }
         }
 
+        [Command("download_playlist")]
+        public async Task downloadPlaylistAsync(string playlistUrl)
+        {
+            await ReplyAsync($"Start downloading whole Playlist...");
+
+            try
+            {
+                await downloadService.DownloadAndPostPlayListAsync(playlistUrl, "mp3", Context);
+                await ReplyAsync("Download completed!");
+            }
+            catch (Exception ex)
+            {
+                await ReplyAsync($"An error occurred: {ex.Message}");
+            }
+        }
 
     }
 }
