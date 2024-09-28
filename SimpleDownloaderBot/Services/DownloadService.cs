@@ -10,7 +10,7 @@ using System;
 using Discord;
 using Discord.Commands;
 
-namespace SimpleDownloaderBot
+namespace SimpleDownloaderBot.Services
 {
     internal class DownloadService
     {

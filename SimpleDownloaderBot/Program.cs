@@ -4,9 +4,9 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
-using SimpleDownloaderBot;
+using SimpleDownloaderBot.Bot;
 
-namespace GithubToDiscord;
+namespace SimpleDownloaderBot;
 class Program
 {
     static Config config;

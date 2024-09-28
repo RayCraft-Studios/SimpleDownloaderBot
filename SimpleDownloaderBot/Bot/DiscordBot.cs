@@ -7,8 +7,9 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using SimpleDownloaderBot.Controller;
 
-namespace SimpleDownloaderBot
+namespace SimpleDownloaderBot.Bot
 {
     internal class DiscordBot
     {
@@ -74,7 +75,7 @@ namespace SimpleDownloaderBot
 
         private async Task RegisterCommandsAsync()
         {
-            await _commands.AddModuleAsync<CommandsModule>(_services);
+            await _commands.AddModuleAsync<DownloadController>(_services);
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
         }
     }
