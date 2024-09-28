@@ -14,7 +14,7 @@ namespace SimpleDownloaderBot.Services
     {
         private YoutubeClient youtube = new YoutubeClient();
         private int minutesMax = 10;
-        private const int batchSize = 10;
+        private const int batchSize = 5;
         private string tempPath = Path.GetTempPath();
 
         /**
