@@ -39,8 +39,9 @@ namespace SimpleDownloaderBot.Services
                 var videoStreamInfo = streamManifest.GetVideoOnlyStreams().GetWithHighestVideoQuality();
                 var audioStreamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
 
-                var videoFilePath = Path.Combine(tempPath, $"{video.Title}_video.mp4");
-                var audioFilePath = Path.Combine(tempPath, $"{video.Title}.mp3");
+                string validName = CheckValidName(video.Title);
+                var videoFilePath = Path.Combine(tempPath, $"{validName}_video.mp4");
+                var audioFilePath = Path.Combine(tempPath, $"{validName}.mp3");
 
                 await youtube.Videos.Streams.DownloadAsync(videoStreamInfo, videoFilePath);
                 await youtube.Videos.Streams.DownloadAsync(audioStreamInfo, audioFilePath);
@@ -56,6 +57,15 @@ namespace SimpleDownloaderBot.Services
                 Console.WriteLine($"Fehler beim Download: {ex.Message}");
                 throw;
             }
+        }
+
+        private string CheckValidName(string videoName)
+        {
+            char[] invalidChars = Path.GetInvalidFileNameChars();
+            for (int i = 0; i < invalidChars.Length; i++) {
+                videoName = videoName.Replace(invalidChars[i], ' ');
+            }
+            return videoName;
         }
     }
 }
