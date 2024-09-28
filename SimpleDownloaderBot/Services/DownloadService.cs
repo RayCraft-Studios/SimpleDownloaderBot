@@ -78,19 +78,30 @@ namespace SimpleDownloaderBot.Services
             Console.WriteLine($"Playlist title: {playlist.Title}");
 
             var videos = await youtube.Playlists.GetVideosAsync(playlistId);
+            var videoList = videos.ToList();
+            const int batchSize = 10;
 
-            foreach ( var video in videos )
+            for (int i = 0; i < videoList.Count; i += batchSize)
             {
-                try
+                var currentBatch = videoList.Skip(i).Take(batchSize).ToList();
+                var downloadTasks = currentBatch.Select(async video =>
                 {
-                    DownloadAndPostVideoAsync(video.Url, format, context);
-                }
-                catch( Exception ex )
-                {
-                    Console.WriteLine("Error: " + ex);
-                    await channel.SendMessageAsync($"An error occured when downloading {video.Title} ERROR: {ex}");
-                }
+                    try
+                    {
+                        await DownloadAndPostVideoAsync(video.Url, format, context);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error: " + ex);
+                        await channel.SendMessageAsync($"An error occurred when downloading {video.Title} ERROR: {ex.Message}");
+                    }
+                });
+
+                await Task.WhenAll(downloadTasks);
+                await channel.SendMessageAsync($"Batch {i / batchSize + 1} completed.");
+                await Task.Delay(TimeSpan.FromSeconds(3));
             }
+            await channel.SendMessageAsync("All videos have been processed.");
         }
 
         /**
