@@ -76,6 +76,7 @@ namespace SimpleDownloaderBot.Bot
         private async Task RegisterCommandsAsync()
         {
             await _commands.AddModuleAsync<DownloadController>(_services);
+            await _commands.AddModuleAsync<MainController>(_services);
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
         }
     }
