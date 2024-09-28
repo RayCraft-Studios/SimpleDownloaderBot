@@ -11,6 +11,8 @@ namespace SimpleDownloaderBot.Services
     internal class DownloadService
     {
         private YoutubeClient youtube = new YoutubeClient();
+        private int minutesMax = 10;
+        private const int batchSize = 10;
 
         /**
          * Methode that use the Youtube-Explode Libary to download the specific
@@ -18,40 +20,22 @@ namespace SimpleDownloaderBot.Services
          * 
          * videoUrl = url from the video you want to download
          * context = the SocketCommandContext you want to send the responce
-         */ 
+         */
         public async Task DownloadAndPostVideoAsync(string videoUrl, string format, SocketCommandContext context)
         {
             var channel = context.Channel;
             var videoId = VideoId.Parse(videoUrl);
             var video = await youtube.Videos.GetAsync(videoId);
 
-            int minutesMax = 10;
-
             string validName = CheckValidName(video.Title);
             await channel.SendMessageAsync($"Downloading {validName}...");
             Console.WriteLine($"Downloading {validName}...");
-
-            string tempPath = Path.GetTempPath();
 
             if (video.Duration <= TimeSpan.FromMinutes(minutesMax))
             {
                 try
                 {
-                    var streamManifest = await youtube.Videos.Streams.GetManifestAsync(videoId);
-                    var videoStreamInfo = streamManifest.GetVideoOnlyStreams().GetWithHighestVideoQuality();
-                    var audioStreamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
-
-                    var videoFilePath = Path.Combine(tempPath, $"{validName}.mp4");
-                    var audioFilePath = Path.Combine(tempPath, $"{validName}.mp3");
-
-                    await youtube.Videos.Streams.DownloadAsync(videoStreamInfo, videoFilePath);
-                    await youtube.Videos.Streams.DownloadAsync(audioStreamInfo, audioFilePath);
-
-                    await channel.SendFileAsync(audioFilePath, $"Here is the audio from {video.Title}!");
-
-                    if (File.Exists(audioFilePath)) File.Delete(audioFilePath);
-                    if (File.Exists(videoFilePath)) File.Delete(videoFilePath);
-                    Console.WriteLine("Done!");
+                    await downloadVideo(video, format);
                 }
                 catch (Exception ex)
                 {
@@ -79,7 +63,6 @@ namespace SimpleDownloaderBot.Services
 
             var videos = await youtube.Playlists.GetVideosAsync(playlistId);
             var videoList = videos.ToList();
-            const int batchSize = 10;
 
             for (int i = 0; i < videoList.Count; i += batchSize)
             {
@@ -88,7 +71,9 @@ namespace SimpleDownloaderBot.Services
                 {
                     try
                     {
-                        await DownloadAndPostVideoAsync(video.Url, format, context);
+                        var videoId = VideoId.Parse(video.Url);
+                        var ytvideo = await youtube.Videos.GetAsync(videoId);
+                        await downloadVideo(ytvideo, format);
                     }
                     catch (Exception ex)
                     {
@@ -102,6 +87,41 @@ namespace SimpleDownloaderBot.Services
                 await Task.Delay(TimeSpan.FromSeconds(3));
             }
             await channel.SendMessageAsync("All videos have been processed.");
+        }
+
+        /**
+         * Method to download the specific video
+         */
+        private async Task downloadVideo(Video video, string format)
+        {
+            string validName = CheckValidName(video.Title);
+            string tempPath = Path.GetTempPath();
+
+            if (video.Duration <= TimeSpan.FromMinutes(minutesMax))
+            {
+                try
+                {
+                    var streamManifest = await youtube.Videos.Streams.GetManifestAsync(video.Id);
+                    var videoStreamInfo = streamManifest.GetVideoOnlyStreams().GetWithHighestVideoQuality();
+                    var audioStreamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
+
+                    var videoFilePath = Path.Combine(tempPath, $"{validName}.mp4");
+                    var audioFilePath = Path.Combine(tempPath, $"{validName}.mp3");
+
+                    await youtube.Videos.Streams.DownloadAsync(videoStreamInfo, videoFilePath);
+                    await youtube.Videos.Streams.DownloadAsync(audioStreamInfo, audioFilePath);
+
+
+                    if (File.Exists(audioFilePath)) File.Delete(audioFilePath);
+                    if (File.Exists(videoFilePath)) File.Delete(videoFilePath);
+                    Console.WriteLine("Done!");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Download error: {ex.Message}");
+                    throw;
+                }
+            }
         }
 
         /**
