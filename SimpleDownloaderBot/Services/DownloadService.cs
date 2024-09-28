@@ -5,6 +5,8 @@ using YoutubeExplode.Common;
 using YoutubeExplode.Playlists;
 using YoutubeExplode.Videos;
 using Discord.Commands;
+using System.IO.Compression;
+using System.Reflection.Metadata.Ecma335;
 
 namespace SimpleDownloaderBot.Services
 {
@@ -88,6 +90,7 @@ namespace SimpleDownloaderBot.Services
 
                 for (int i = 0; i < videoList.Count; i += batchSize)
                 {
+                    List<string> pathList = new List<string>();
                     var currentBatch = videoList.Skip(i).Take(batchSize).ToList();
                     var downloadTasks = currentBatch.Select(async video =>
                     {
@@ -102,6 +105,12 @@ namespace SimpleDownloaderBot.Services
                             var audioFilePath = Path.Combine(tempPath, $"{validName}.mp3");
 
                             await downloadVideo(ytvideo, videoFilePath, audioFilePath);
+
+                            if (File.Exists(audioFilePath))
+                            {
+                                pathList.Add(audioFilePath);
+                            }
+                            if (File.Exists(videoFilePath)) File.Delete(videoFilePath);
                         }
                         catch (Exception ex)
                         {
@@ -112,6 +121,14 @@ namespace SimpleDownloaderBot.Services
 
                     await Task.WhenAll(downloadTasks);
                     await channel.SendMessageAsync($"Batch {i / batchSize + 1} completed.");
+
+                    string zipFile = filesToZip(pathList);
+                    if (File.Exists(zipFile))
+                    {
+                        await channel.SendFileAsync(zipFile);
+                        File.Delete(zipFile);
+                    }
+
                     await Task.Delay(TimeSpan.FromSeconds(3));
                 }
                 await channel.SendMessageAsync("All videos have been processed.");
@@ -120,7 +137,27 @@ namespace SimpleDownloaderBot.Services
             {
                 await channel.SendMessageAsync($"An error occurred: {ex.Message}");
             }
-            
+        }
+
+        private string filesToZip(List<string> fileList)
+        {
+            string zipFilePath = Path.Combine(tempPath, "DownloadedVideos.zip");
+
+            using (var zipFileStream = new FileStream(zipFilePath, FileMode.Create))
+            {
+                using (var zipArchive = new ZipArchive(zipFileStream, ZipArchiveMode.Create))
+                {
+                    foreach (var file in fileList)
+                    {
+                        if (File.Exists(file)) { 
+                            zipArchive.CreateEntryFromFile(file, Path.GetFileName(file));
+                            File.Delete(file);
+                        }
+                    }
+                }
+            }
+
+            return zipFilePath;
         }
 
         /**
