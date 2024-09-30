@@ -10,6 +10,7 @@ using System.Reflection.Metadata.Ecma335;
 using System.Web;
 using AngleSharp.Dom;
 using Discord;
+using AngleSharp.Io.Dom;
 
 namespace SimpleDownloaderBot.Services
 {
@@ -19,6 +20,7 @@ namespace SimpleDownloaderBot.Services
         private int minutesMax = 10;
         private const int batchSize = 5;
         private string tempPath = Path.GetTempPath();
+        private bool Zip = false; //TODO IMPLEMENT TO SELECT IN COMMAND
 
         public async Task CheckURL(string url, SocketCommandContext context)
         {
@@ -134,11 +136,25 @@ namespace SimpleDownloaderBot.Services
                     await Task.WhenAll(downloadTasks);
                     await channel.SendMessageAsync($"Batch {i / batchSize + 1} completed.");
 
-                    string zipFile = filesToZip(pathList);
-                    if (File.Exists(zipFile))
+                    if (Zip)
                     {
-                        await user.SendFileAsync(zipFile);
-                        File.Delete(zipFile);
+                        string zipFile = filesToZip(pathList);
+                        if (File.Exists(zipFile))
+                        {
+                            await user.SendFileAsync(zipFile);
+                            File.Delete(zipFile);
+                        }
+                    }
+                    else
+                    {
+                        foreach(var file in pathList)
+                        {
+                            if (File.Exists(file))
+                            {
+                                await user.SendFileAsync(file);
+                                pathList.Add(file);
+                            }
+                        }
                     }
 
                     await Task.Delay(TimeSpan.FromSeconds(3));
