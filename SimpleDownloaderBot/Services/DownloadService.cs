@@ -134,7 +134,7 @@ namespace SimpleDownloaderBot.Services
                     });
 
                     await Task.WhenAll(downloadTasks);
-                    await channel.SendMessageAsync($"Batch {i / batchSize + 1} completed.");
+                    await user.SendMessageAsync($"Batch {i / batchSize + 1} completed.");
 
                     if (Zip)
                     {
@@ -145,18 +145,16 @@ namespace SimpleDownloaderBot.Services
                             File.Delete(zipFile);
                         }
                     }
-                    else
-                    {
+                    else{
                         foreach(var file in pathList)
                         {
                             if (File.Exists(file))
                             {
                                 await user.SendFileAsync(file);
-                                pathList.Add(file);
+                                File.Delete(file);
                             }
                         }
                     }
-
                     await Task.Delay(TimeSpan.FromSeconds(3));
                 }
                 await user.SendMessageAsync("All videos have been processed.");
