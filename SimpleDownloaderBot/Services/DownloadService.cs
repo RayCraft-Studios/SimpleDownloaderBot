@@ -136,20 +136,16 @@ namespace SimpleDownloaderBot.Services
                     await Task.WhenAll(downloadTasks);
                     await user.SendMessageAsync($"Batch {i / batchSize + 1} completed.");
 
-                    if (Zip)
-                    {
+                    if (Zip){
                         string zipFile = filesToZip(pathList);
-                        if (File.Exists(zipFile))
-                        {
+                        if (File.Exists(zipFile)){
                             await user.SendFileAsync(zipFile);
                             File.Delete(zipFile);
                         }
                     }
                     else{
-                        foreach(var file in pathList)
-                        {
-                            if (File.Exists(file))
-                            {
+                        foreach(var file in pathList){
+                            if (File.Exists(file)){
                                 await user.SendFileAsync(file);
                                 File.Delete(file);
                             }
