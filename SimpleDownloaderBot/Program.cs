@@ -5,6 +5,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using SimpleDownloaderBot.Bot;
+using SimpleDownloaderBot.Data;
 
 namespace SimpleDownloaderBot;
 class Program
@@ -33,7 +34,7 @@ class Program
         bool isValid = true;
         try
         {
-            using (StreamReader reader = new StreamReader("config.json"))
+            using (StreamReader reader = new StreamReader("Data/config.json"))
             {
                 string json = reader.ReadToEnd();
                 config = JsonConvert.DeserializeObject<Config>(json);

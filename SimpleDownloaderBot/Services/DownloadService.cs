@@ -7,6 +7,8 @@ using YoutubeExplode.Videos;
 using Discord.Commands;
 using System.IO.Compression;
 using System.Reflection.Metadata.Ecma335;
+using System.Web;
+using AngleSharp.Dom;
 
 namespace SimpleDownloaderBot.Services
 {
@@ -17,6 +19,16 @@ namespace SimpleDownloaderBot.Services
         private const int batchSize = 5;
         private string tempPath = Path.GetTempPath();
 
+        public async Task CheckURL(string url, SocketCommandContext context)
+        {
+            if (IsYoutubePlaylist(url)){
+                await DownloadPlaylistAsMusic(url, context);
+            }
+            else{
+                await DownloadVideoAsMusic(url, context);
+            }
+        }
+
         /**
          * Methode that use the Youtube-Explode Libary to download the specific
          * Video through the specific link
@@ -24,12 +36,11 @@ namespace SimpleDownloaderBot.Services
          * videoUrl = url from the video you want to download
          * context = the SocketCommandContext you want to send the responce
          */
-        public async Task DownloadVideoAsMusic(string videoUrl, SocketCommandContext context)
+        private async Task DownloadVideoAsMusic(string videoUrl, SocketCommandContext context)
         {
             var channel = context.Channel;
             try
             {
-
                 var videoId = VideoId.Parse(videoUrl);
                 var video = await youtube.Videos.GetAsync(videoId);
 
@@ -44,7 +55,7 @@ namespace SimpleDownloaderBot.Services
                         var videoFilePath = Path.Combine(tempPath, $"{validName}.mp4");
                         var audioFilePath = Path.Combine(tempPath, $"{validName}.mp3");
 
-                        await downloadVideo(video, videoFilePath, audioFilePath);
+                        await DownloadVideo(video, videoFilePath, audioFilePath);
 
                         if (File.Exists(audioFilePath))
                         {
@@ -74,7 +85,7 @@ namespace SimpleDownloaderBot.Services
         /**
          * Method to download the whole public playlist
          */
-        public async Task DownloadPlaylistAsMusic(string playlistUrl, SocketCommandContext context)
+        private async Task DownloadPlaylistAsMusic(string playlistUrl, SocketCommandContext context)
         {
             var channel = context.Channel;
             try
@@ -104,7 +115,7 @@ namespace SimpleDownloaderBot.Services
                             var videoFilePath = Path.Combine(tempPath, $"{validName}.mp4");
                             var audioFilePath = Path.Combine(tempPath, $"{validName}.mp3");
 
-                            await downloadVideo(ytvideo, videoFilePath, audioFilePath);
+                            await DownloadVideo(ytvideo, videoFilePath, audioFilePath);
 
                             if (File.Exists(audioFilePath))
                             {
@@ -139,6 +150,9 @@ namespace SimpleDownloaderBot.Services
             }
         }
 
+        /**
+         * Helper methode to convert files to zip
+         */
         private string filesToZip(List<string> fileList)
         {
             string zipFilePath = Path.Combine(tempPath, "DownloadedVideos.zip");
@@ -156,14 +170,13 @@ namespace SimpleDownloaderBot.Services
                     }
                 }
             }
-
             return zipFilePath;
         }
 
         /**
          * Method to download the specific video
          */
-        private async Task downloadVideo(Video video, string videoFilePath, string audioFilePath)
+        private async Task DownloadVideo(Video video, string videoFilePath, string audioFilePath)
         {
             if (video.Duration <= TimeSpan.FromMinutes(minutesMax))
             {
@@ -184,6 +197,20 @@ namespace SimpleDownloaderBot.Services
                     throw;
                 }
             }
+        }
+
+        /**
+         * Helper Method to check if the link is for a playlist
+         */
+        private static bool IsYoutubePlaylist(string url)
+        {
+            Uri uri;
+            if (Uri.TryCreate(url,UriKind.Absolute, out uri))
+            {
+                var query = HttpUtility.ParseQueryString(uri.Query);
+                return query["list"] != null;
+            }
+            return false;
         }
 
         /**

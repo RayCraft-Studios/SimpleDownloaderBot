@@ -17,13 +17,7 @@ namespace SimpleDownloaderBot.Controller
         [Command("download")]
         public async Task downloadVideoAsync(string youtubeUrl)
         {
-            downloadService.DownloadVideoAsMusic(youtubeUrl, Context);
-        }
-
-        [Command("download_playlist")]
-        public async Task downloadPlaylistAsync(string playlistUrl)
-        {
-            downloadService.DownloadPlaylistAsMusic(playlistUrl, Context);
+            downloadService.CheckURL(youtubeUrl, Context);
         }
 
     }
