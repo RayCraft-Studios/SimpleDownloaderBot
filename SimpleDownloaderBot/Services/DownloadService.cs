@@ -9,6 +9,7 @@ using System.IO.Compression;
 using System.Reflection.Metadata.Ecma335;
 using System.Web;
 using AngleSharp.Dom;
+using Discord;
 
 namespace SimpleDownloaderBot.Services
 {
@@ -39,14 +40,15 @@ namespace SimpleDownloaderBot.Services
         private async Task DownloadVideoAsMusic(string videoUrl, SocketCommandContext context)
         {
             var channel = context.Channel;
+            var user = context.User;
             try
             {
                 var videoId = VideoId.Parse(videoUrl);
                 var video = await youtube.Videos.GetAsync(videoId);
 
                 string validName = CheckValidName(video.Title);
-                await channel.SendMessageAsync($"Start downloading {validName}...");
-                Console.WriteLine($"Downloading {validName}...");
+                await channel.SendMessageAsync($"Start downloading {validName}, see your PM's...");
+                await user.SendMessageAsync($"Start downloading {validName}...");
 
                 if (video.Duration <= TimeSpan.FromMinutes(minutesMax))
                 {
@@ -59,7 +61,7 @@ namespace SimpleDownloaderBot.Services
 
                         if (File.Exists(audioFilePath))
                         {
-                            await channel.SendFileAsync(audioFilePath);
+                            await user.SendFileAsync(audioFilePath);
                             File.Delete(audioFilePath);
                         }
 
@@ -67,13 +69,12 @@ namespace SimpleDownloaderBot.Services
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Download error: {ex.Message}");
                         throw;
                     }
                 }
                 else
                 {
-                    await channel.SendMessageAsync($"{video.Title} is to long: Downloads cannot have more than {minutesMax} minutes. This data has a length of {video.Duration}");
+                    await user.SendMessageAsync($"{video.Title} is to long: Downloads cannot have more than {minutesMax} minutes. This data has a length of {video.Duration}");
                 }
             }
             catch (Exception ex)
@@ -88,13 +89,14 @@ namespace SimpleDownloaderBot.Services
         private async Task DownloadPlaylistAsMusic(string playlistUrl, SocketCommandContext context)
         {
             var channel = context.Channel;
+            var user = context.User;
             try
             {
                 var playlistId = PlaylistId.Parse(playlistUrl);
                 var playlist = await youtube.Playlists.GetAsync(playlistId);
 
-                await channel.SendMessageAsync($"Playlist title: {playlist.Title}. Start Downloading...");
-                Console.WriteLine($"Playlist title: {playlist.Title}");
+                await channel.SendMessageAsync($"Playlist title: {playlist.Title}. Start Downloading, see your PM's...");
+                await user.SendMessageAsync($"Playlist title: {playlist.Title}. Start Downloading...");
 
                 var videos = await youtube.Playlists.GetVideosAsync(playlistId);
                 var videoList = videos.ToList();
@@ -125,7 +127,6 @@ namespace SimpleDownloaderBot.Services
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine("Error: " + ex);
                             await channel.SendMessageAsync($"An error occurred when downloading {video.Title} ERROR: {ex.Message}");
                         }
                     });
@@ -136,13 +137,13 @@ namespace SimpleDownloaderBot.Services
                     string zipFile = filesToZip(pathList);
                     if (File.Exists(zipFile))
                     {
-                        await channel.SendFileAsync(zipFile);
+                        await user.SendFileAsync(zipFile);
                         File.Delete(zipFile);
                     }
 
                     await Task.Delay(TimeSpan.FromSeconds(3));
                 }
-                await channel.SendMessageAsync("All videos have been processed.");
+                await user.SendMessageAsync("All videos have been processed.");
             }
             catch (Exception ex)
             {
@@ -188,12 +189,9 @@ namespace SimpleDownloaderBot.Services
 
                     await youtube.Videos.Streams.DownloadAsync(videoStreamInfo, videoFilePath);
                     await youtube.Videos.Streams.DownloadAsync(audioStreamInfo, audioFilePath);
-
-                    Console.WriteLine("Done!");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Download error: {ex.Message}");
                     throw;
                 }
             }
