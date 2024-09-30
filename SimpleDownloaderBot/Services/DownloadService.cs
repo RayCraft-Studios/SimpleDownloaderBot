@@ -1,5 +1,4 @@
-﻿
-using YoutubeExplode;
+﻿using YoutubeExplode;
 using YoutubeExplode.Videos.Streams;
 using YoutubeExplode.Common;
 using YoutubeExplode.Playlists;
