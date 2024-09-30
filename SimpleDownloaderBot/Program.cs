@@ -32,17 +32,14 @@ class Program
     static void InitAPIKeys()
     {
         bool isValid = true;
-        try
-        {
-            using (StreamReader reader = new StreamReader("Data/config.json"))
-            {
+        try{
+            using (StreamReader reader = new StreamReader("Data/config.json")){
                 string json = reader.ReadToEnd();
                 config = JsonConvert.DeserializeObject<Config>(json);
             }
             if (string.IsNullOrEmpty(config.discordBotToken)) { isValid = false; Console.WriteLine("Discord Bot Token is Missing. Please insert it in config.json"); }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex){
             isValid = false;
             Console.WriteLine(ex);
         }

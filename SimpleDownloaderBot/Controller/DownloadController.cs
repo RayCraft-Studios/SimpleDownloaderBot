@@ -12,11 +12,10 @@ namespace SimpleDownloaderBot.Controller
 {
     internal class DownloadController : ModuleBase<SocketCommandContext>
     {
-        private readonly DownloadService downloadService = new DownloadService();
-
         [Command("download")]
         public async Task downloadVideoAsync(string youtubeUrl)
         {
+            DownloadService downloadService = new DownloadService();
             downloadService.CheckURL(youtubeUrl, Context);
         }
 
