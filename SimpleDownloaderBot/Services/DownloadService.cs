@@ -27,18 +27,20 @@ namespace SimpleDownloaderBot.Services
         private int minutesMax = 10;
         private const int batchSize = 5;
         private string tempPath = Path.GetTempPath();
+        private bool asPrivateMessage;
         private bool Zip = false; //TODO IMPLEMENT TO SELECT IN COMMAND
 
         /**
          * Method for setup downloader
          * and check the url
          */
-        public async Task CheckURL(string url, SocketCommandContext context)
+        public async Task CheckURL(string url, SocketCommandContext context, bool sendPrivate)
         {
             this.url = url;
             this.context = context;
             this.channel = context.Channel;
             this.user = context.User;
+            this.asPrivateMessage = sendPrivate;
 
             if (IsYoutubePlaylist(url)){
                 await DownloadPlaylistAsMusic();
@@ -63,8 +65,9 @@ namespace SimpleDownloaderBot.Services
                 var video = await youtube.Videos.GetAsync(videoId);
 
                 string validName = CheckValidName(video.Title);
+
                 await channel.SendMessageAsync($"Start downloading {validName}, see your PM's...");
-                await user.SendMessageAsync($"Start downloading {validName}...");
+                await SendContent(message: $"Start downloading {validName}...");
 
                 if (video.Duration <= TimeSpan.FromMinutes(minutesMax)){
                     try{
@@ -74,24 +77,19 @@ namespace SimpleDownloaderBot.Services
                         await DownloadVideo(video, videoFilePath, audioFilePath);
 
                         if (File.Exists(audioFilePath)){
-                            await user.SendFileAsync(audioFilePath);
+                            await SendContent(file: audioFilePath);
                             File.Delete(audioFilePath);
                         }
 
                         if (File.Exists(videoFilePath)) File.Delete(videoFilePath);
                     }
-                    catch (Exception ex){
-                        throw;
-                    }
+                    catch (Exception ex){throw;}
                 }
                 else{
-                    await user.SendMessageAsync($"{video.Title} is to long: Downloads cannot have more than {minutesMax} minutes. This data has a length of {video.Duration}");
+                    await SendContent(message: $"{video.Title} is to long: Downloads cannot have more than {minutesMax} minutes. This data has a length of {video.Duration}");
                 }
             }
-            catch (Exception ex)
-            {
-                await channel.SendMessageAsync($"An error occurred: {ex.Message}");
-            }
+            catch (Exception ex){ await SendContent(message: $"An error occurred: {ex.Message}"); }
         }
 
         /**
@@ -99,14 +97,12 @@ namespace SimpleDownloaderBot.Services
          */
         private async Task DownloadPlaylistAsMusic()
         {
-            var channel = context.Channel;
-            var user = context.User;
             try{
                 var playlistId = PlaylistId.Parse(url);
                 var playlist = await youtube.Playlists.GetAsync(playlistId);
 
                 await channel.SendMessageAsync($"Playlist title: {playlist.Title}. Start Downloading, see your PM's...");
-                await user.SendMessageAsync($"Playlist title: {playlist.Title}. Start Downloading...");
+                await SendContent(message: $"Playlist title: {playlist.Title}. Start Downloading...");
 
                 var videos = await youtube.Playlists.GetVideosAsync(playlistId);
                 var videoList = videos.ToList();
@@ -132,34 +128,34 @@ namespace SimpleDownloaderBot.Services
                             if (File.Exists(videoFilePath)) File.Delete(videoFilePath);
                         }
                         catch (Exception ex){
-                            await channel.SendMessageAsync($"An error occurred when downloading {video.Title} ERROR: {ex.Message}");
+                            await SendContent(message: $"An error occurred when downloading {video.Title} ERROR: {ex.Message}");
                         }
                     });
 
                     await Task.WhenAll(downloadTasks);
-                    await user.SendMessageAsync($"Batch {i / batchSize + 1} completed.");
+                    await SendContent(message: $"Batch {i / batchSize + 1} completed.");
 
                     if (Zip){
                         string zipFile = filesToZip(pathList);
                         if (File.Exists(zipFile)){
-                            await user.SendFileAsync(zipFile);
+                            await SendContent(file: zipFile);
                             File.Delete(zipFile);
                         }
                     }
                     else{
                         foreach(var file in pathList){
                             if (File.Exists(file)){
-                                await user.SendFileAsync(file);
+                                await SendContent(file: file);
                                 File.Delete(file);
                             }
                         }
                     }
                     await Task.Delay(TimeSpan.FromSeconds(3));
                 }
-                await user.SendMessageAsync("All videos have been processed.");
+                await SendContent(message: "All videos have been processed.");
             }
             catch (Exception ex){
-                await channel.SendMessageAsync($"An error occurred: {ex.Message}");
+                await SendContent(message: $"An error occurred: {ex.Message}");
             }
         }
 
@@ -227,6 +223,21 @@ namespace SimpleDownloaderBot.Services
                 videoName = videoName.Replace(invalidChars[i], ' ');
             }
             return videoName;
+        }
+
+        /**
+         * Helper Method to send contend based on the providen params
+         */
+        private async Task SendContent(string message = null, string file = null)
+        {
+            if (string.IsNullOrEmpty(file)){
+                if (asPrivateMessage) { await user.SendMessageAsync(message); }
+                else{ await channel.SendMessageAsync(message); }
+            }
+            else{
+                if (asPrivateMessage){ await user.SendFileAsync(file, text: message); }
+                else{ await channel.SendFileAsync(file, text: message); }
+            }
         }
     }
 }
