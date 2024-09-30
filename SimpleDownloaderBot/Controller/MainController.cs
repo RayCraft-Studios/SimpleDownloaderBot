@@ -22,7 +22,9 @@ namespace SimpleDownloaderBot.Controller
                 .WithDescription("List of all Commands:")
                 .AddField("!help", "Shows all exiting Commands")
                 .AddField("!hello", "Nice greeding for nice people")
-                .AddField("!download [Youtube URL]", "Downloads the specific Video and send it the channel as mp3")
+                .AddField("!download [Youtube URL] [send as PM true/false (optional | default true)]", "Downloads the specific Video as mp3 and send it" + 
+                            "as PM or, if 'send as PM' is set to false, send it in the channel where the command was called. Playlists gets recognised" +
+                            " automatically and the videos will be downloaded one by one")
                 .WithFooter(footer => footer.Text = "SimpleDownloaderBot | ©RayCraft Studios 2024")
                 .WithCurrentTimestamp();
 
